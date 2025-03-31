@@ -29,7 +29,7 @@ fi
 #Updata and upgrade package
 apt update
 apt upgrade -y
-apt install -y apt-transport-https lsb-release ca-certificates wget curl aptitude
+apt install -y apt-transport-https lsb-release ca-certificates wget curl aptitude build-essential
 
 #Uninstall apparmor
 if service --status-all | grep -Fq 'apparmor'; then
@@ -260,56 +260,6 @@ menuselect/menuselect \
 make
 make install
 
-#Asterisk service systemd
-cat > /lib/systemd/system/asterisk.service <<EOF
-[Unit]
-Description=LSB: Asterisk PBX
-Before=runlevel2.target
-Before=runlevel3.target
-Before=runlevel4.target
-Before=runlevel5.target
-Before=shutdown.target
-#Before=iaxmodem.service
-#Before=issabel-updaterd.service
-#Before=issabel-portknock.service
-After=network-online.target
-After=nss-lookup.target
-After=remote-fs.target
-#After=dahdi.service
-#After=misdn.service
-#After=lcr.service
-#After=wanrouter.service
-#After=mysql.service
-After=postgresql.service
-After=network-online.target
-Wants=network-online.target
-Conflicts=shutdown.target
-
-[Service]
-Type=simple
-Environment=HOME=/var/lib/asterisk
-WorkingDirectory=/var/lib/asterisk
-ExecStart=/usr/sbin/asterisk -U asterisk -G asterisk -mqf -C /etc/asterisk/asterisk.conf
-#ExecStart=/usr/sbin/asterisk -f -C /etc/asterisk/asterisk.conf -vvvg
-ExecReload=/usr/sbin/asterisk -rx 'core reload'
-LimitCORE=infinity
-LimitNOFILE=infinity
-LimitNPROC=infinity
-LimitMEMLOCK=infinity
-Restart=on-failure
-RestartSec=4
-# Prevent duplication of logs with color codes to /var/log/messages
-StandardOutput=null
-PrivateTmp=true
-
-#Nice=0
-#UMask=0002
-#LimitNOFILE=
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
 tar zxvf $SOURCE_DIR_SCRIPT/asterisk/asterisk_issabel.tar.gz -C /etc
 rm -f /etc/asteris/stir_shaken.conf
 
@@ -328,9 +278,6 @@ chown -R asterisk: /var/log/asterisk
 chown -R asterisk: /var/lib/asterisk
 
 
-#Start asterisk
-systemctl enable asterisk.service
-systemctl start asterisk.service
 
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/script/login-info.sh /etc/profile.d/login-info.sh 
 chmod 755 /etc/profile.d/login-info.sh
@@ -515,7 +462,7 @@ fi
 # Compile issabelPBX language files
 cd /usr/src/issabelPBX/
 build/compile_gettext.sh 
-systemctl restart apache2 
+service apache2 restart 
 
 # Install IssabelPBX with install_amp
 framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
@@ -527,7 +474,7 @@ rm -f /etc/asteris/stir_shaken.conf
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/filter.d/*.conf /etc/fail2ban/filter.d
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/jail.d/*.conf /etc/fail2ban/jail.d
 
-systemctl restart fail2ban 
+service  fail2ban restart
 
 # Logrotate
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/logrotate/asterisk_logrotate.conf /etc/logrotate.d/asterisk.conf
