@@ -33,7 +33,7 @@ apt install -y apt-transport-https lsb-release ca-certificates wget curl aptitud
 
 #Uninstall apparmor
 if service --status-all | grep -Fq 'apparmor'; then
-   systemctl stop apparmor
+   service apparmor stop
    apt remove -y apparmor
 fi
 
@@ -82,7 +82,7 @@ tar zxvf $ASTERISK_SRC_FILE -C /usr/src/${ASTERISK_SRC_DIR} --strip-components=1
 cd ${ASTERISK_SRC_DIR}/
 
 #Install Asterisk dependencies
-contrib/scripts/install_prereq install
+./contrib/scripts/install_prereq install
 
 #Install asterisk
 ./configure
@@ -328,7 +328,7 @@ a2enmod ssl
 ln -s /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-enabled/  
 
 #Restart apache
-systemctl restart apache2  
+service apache2 restart  
 
 
 # UnixODBC config
@@ -461,9 +461,10 @@ fi
 
 # Compile issabelPBX language files
 cd /usr/src/issabelPBX/
-build/compile_gettext.sh 
+./build/compile_gettext.sh 
 service apache2 restart 
 
+service mariadb restart
 # Install IssabelPBX with install_amp
 framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
 
@@ -500,8 +501,8 @@ WantedBy=multi-user.target
 EOF
 
 #Start vosk
-systemctl enable vosk.service
-systemctl start vosk.service
+#systemctl enable vosk.service
+service vosk start
 
 #Install asterisk vosk module
 cd /usr/src
@@ -528,7 +529,7 @@ EOF
 sed -i 's/^;live_dangerously = no/live_dangerously = yes/g' /etc/asterisk/asterisk.conf
 
 #Restart asterisk 
-systemctl restart asterisk
+service asterisk restart
 
 #Install perl lib
 perl -MCPAN -e "install LWP::Protocol::https; install Digest::MD5"
