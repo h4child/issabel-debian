@@ -467,6 +467,9 @@ service apache2 restart
 service mariadb restart
 # Install IssabelPBX with install_amp
 framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
+rm -rf /etc/amportal.conf 
+framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
+
 
 rm -f /etc/asteris/stir_shaken.conf
 
