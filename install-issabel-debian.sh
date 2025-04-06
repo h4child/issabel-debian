@@ -47,7 +47,7 @@ apt install -y \
    mpg123 sox fail2ban  \
    cracklib-runtime dnsutils \
    certbot python3-certbot-apache \
-   iptables libedit-dev
+   iptables libedit-dev uuid-dev
 
 #Add user asterisk
 if ! id -u "asterisk" >/dev/null 2>&1; then
@@ -69,7 +69,7 @@ cd /usr/src
 
 [[ -d /usr/src/${ASTERISK_SRC_DIR} ]] || mkdir -p /usr/src/${ASTERISK_SRC_DIR}
 
-tar zxvf $ASTERISK_SRC_FILE -C /usr/src/${ASTERISK_SRC_DIR} --strip-components=1
+tar zxf $ASTERISK_SRC_FILE -C /usr/src/${ASTERISK_SRC_DIR} --strip-components=1
 cd ${ASTERISK_SRC_DIR}/
 
 #Install Asterisk dependencies
@@ -251,7 +251,7 @@ menuselect/menuselect \
 make
 make install
 
-tar zxvf $SOURCE_DIR_SCRIPT/asterisk/asterisk_issabel.tar.gz -C /etc
+tar zxf $SOURCE_DIR_SCRIPT/asterisk/asterisk_issabel.tar.gz -C /etc
 rm -f /etc/asterisk/stir_shaken.conf
 
 mkdir -p /var/lib/asterisk/sounds/es
@@ -355,7 +355,7 @@ fi
 FILENAME=$(basename $DLFILE)
 rm -rf $FILENAME 
 wget $DLFILE  
-tar zxvf $FILENAME 
+tar zxf $FILENAME 
 rm $FILENAME$A 
 cp $(find /usr/src/ -name libmaodbc.so) /usr/local/lib 
 
