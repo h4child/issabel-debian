@@ -76,7 +76,7 @@ cd ${ASTERISK_SRC_DIR}/
 ./contrib/scripts/install_prereq install
 
 #Install asterisk
-./configure
+./configure --with-jansson-bundled
 make menuselect.makeopts 
 menuselect/menuselect \
     --disable-category MENUSELECT_ADDONS \
