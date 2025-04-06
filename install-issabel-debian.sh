@@ -47,7 +47,8 @@ apt install -y \
    mpg123 sox fail2ban  \
    cracklib-runtime dnsutils \
    certbot python3-certbot-apache \
-   iptables libedit-dev uuid-dev
+   iptables libedit-dev uuid-dev \
+   libxml2-dev libxml2
 
 #Add user asterisk
 if ! id -u "asterisk" >/dev/null 2>&1; then
