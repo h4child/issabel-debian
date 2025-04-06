@@ -49,15 +49,6 @@ apt install -y \
    certbot python3-certbot-apache \
    iptables
 
-#Install docker
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-apt -y update
-apt -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
 #Add user asterisk
 if ! id -u "asterisk" >/dev/null 2>&1; then
    adduser asterisk --uid 5000 --gecos "Asterisk PBX" --disabled-password --disabled-login --home /var/lib/asterisk
@@ -261,15 +252,9 @@ make
 make install
 
 tar zxvf $SOURCE_DIR_SCRIPT/asterisk/asterisk_issabel.tar.gz -C /etc
-rm -f /etc/asteris/stir_shaken.conf
+rm -f /etc/asterisk/stir_shaken.conf
 
 mkdir -p /var/lib/asterisk/sounds/es
-
-# Install spanish prompts
-[[ -f /tmp/azure_es_female.tgz ]] || {
-   wget repo.issabel.org/azure_es_female.tgz -P /tmp
-}
-tar zxvf /tmp/azure_es_female.tgz -C /var/lib/asterisk/sounds/es
 
 #Set permisions to asterisk directories
 chown -R asterisk: /etc/asterisk/
@@ -277,7 +262,7 @@ chown -R asterisk: /var/run/asterisk
 chown -R asterisk: /var/log/asterisk
 chown -R asterisk: /var/lib/asterisk
 
-
+asterisk -g -n
 
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/script/login-info.sh /etc/profile.d/login-info.sh 
 chmod 755 /etc/profile.d/login-info.sh
@@ -300,11 +285,7 @@ if [ -d /usr/lib/x86_64-linux-gnu/asterisk/modules ]; then
     ln -s /usr/lib/x86_64-linux-gnu/asterisk/modules /usr/lib/asterisk  
 fi
 
-
-# Redirect to /admin for web root
-if [ -f /var/www/html/index.html ]; then
-    mv /var/www/html/index.html /var/www/html/index.html.bak  
-fi
+rm /var/www/html/index.html
 
 cat > /var/www/html/index.html <<EOF
 <html>
@@ -324,15 +305,13 @@ ln -s /etc/apache2/conf-available/pbxapi.conf /etc/apache2/conf-enabled
 a2enmod rewrite 
 
 # Enable SSL
-a2enmod ssl  
+a2enmod ssl 
 ln -s /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-enabled/  
 
 #Restart apache
 service apache2 restart  
 
-
 # UnixODBC config
-
 cat > /etc/odbc.ini <<EOF
 [MySQL-asteriskcdrdb]
 Description=MySQL connection to 'asteriskcdrdb' database
@@ -356,7 +335,6 @@ EOF
 
 
 # Install Maria ODBC Connector for some distros/versions
-
 cd /usr/src
 if [ -e "/run/mysqld/mysqld.sock" ]; then
 	sed -i -e 's/Socket=\/var\/lib\/mysql\/mysql.sock/astdatadir => \/run\/mysqld\/mysqld.sock/' /etc/odbc.ini
@@ -371,15 +349,11 @@ elif [ -f /etc/debian_version ]; then
         DLFILE="https://dlm.mariadb.com/1936451/Connectors/odbc/connector-odbc-3.1.15/mariadb-connector-odbc-3.1.15-debian-buster-amd64.tar.gz"
     elif [ $(cat /etc/debian_version | cut -d. -f1) = 11 ]; then
         DLFILE="https://dlm.mariadb.com/1936451/Connectors/odbc/connector-odbc-3.1.15/mariadb-connector-odbc-3.1.15-debian-buster-amd64.tar.gz"
-    elif [ $(cat /etc/debian_version | cut -d. -f1) = 10 ]; then
-        DLFILE="https://dlm.mariadb.com/1936451/Connectors/odbc/connector-odbc-3.1.15/mariadb-connector-odbc-3.1.15-debian-buster-amd64.tar.gz"
-    elif [ $(cat /etc/debian_version | cut -d. -f1) = 9 ]; then
-	DLFILE="https://dlm.mariadb.com/1936481/Connectors/odbc/connector-odbc-3.1.15/mariadb-connector-odbc-3.1.15-debian-9-stretch-amd64.tar.gz"
     fi
 fi
 
 FILENAME=$(basename $DLFILE)
-rm $FILENAME 
+rm -rf $FILENAME 
 wget $DLFILE  
 tar zxvf $FILENAME 
 rm $FILENAME$A 
@@ -462,23 +436,20 @@ fi
 # Compile issabelPBX language files
 cd /usr/src/issabelPBX/
 ./build/compile_gettext.sh 
-service apache2 restart 
+service apache2 start
+service mariadb start
 
-service mariadb restart
 # Install IssabelPBX with install_amp
 framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
-rm -rf /etc/amportal.conf 
-framework/install_amp --dbuser=root --installdb --scripted --language=$LANGUAGE --adminpass=$ISSABEL_ADMIN_PASSWORD
 
+rm -f /etc/asterisk/stir_shaken.conf
 
-rm -f /etc/asteris/stir_shaken.conf
-
-# Copy fail2ban config files 
+# Copy fail2ban config files
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/action.d/*.conf /etc/fail2ban/action.d
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/filter.d/*.conf /etc/fail2ban/filter.d
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/jail.d/*.conf /etc/fail2ban/jail.d
 
-service  fail2ban restart
+service fail2ban start
 
 # Logrotate
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/logrotate/asterisk_logrotate.conf /etc/logrotate.d/asterisk.conf
@@ -531,8 +502,6 @@ EOF
 #https://docs.asterisk.org/Configuration/Dialplan/Privilege-Escalations-with-Dialplan-Functions/
 sed -i 's/^;live_dangerously = no/live_dangerously = yes/g' /etc/asterisk/asterisk.conf
 
-#Restart asterisk 
-service asterisk restart
 
 #Install perl lib
 perl -MCPAN -e "install LWP::Protocol::https; install Digest::MD5"
