@@ -48,7 +48,9 @@ apt install -y \
    cracklib-runtime dnsutils \
    certbot python3-certbot-apache \
    iptables libedit-dev uuid-dev \
-   libxml2-dev libxml2
+   libxml2-dev libxml2 \
+   sqlite3 libsqlite3-dev libsqlite3-0
+
 
 #Add user asterisk
 if ! id -u "asterisk" >/dev/null 2>&1; then
