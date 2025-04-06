@@ -452,54 +452,55 @@ rm -f /etc/asterisk/stir_shaken.conf
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/filter.d/*.conf /etc/fail2ban/filter.d
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/fail2ban/jail.d/*.conf /etc/fail2ban/jail.d
 
-service fail2ban start
+rm /var/run/fail2ban/fail2ban.sock
+service fail2ban restart
 
 # Logrotate
 /usr/bin/cp -rf $SOURCE_DIR_SCRIPT/logrotate/asterisk_logrotate.conf /etc/logrotate.d/asterisk.conf
 
 #Vosk docker container unit systemd
-cat > /lib/systemd/system/vosk.service <<EOF
-[Unit]
-Description=Vosk Container
-After=docker.service
-Requires=docker.service
-
-[Service]
-TimeoutStartSec=7
-Restart=always
-ExecStart=/usr/bin/docker run --rm --name vosk \
-    -p 2700:2700 \
-    issabel/vosk-asr-es:latest
-
-ExecStop=/usr/bin/docker stop vosk
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-#Start vosk
-#systemctl enable vosk.service
-service vosk start
-
-#Install asterisk vosk module
-cd /usr/src
-git clone  https://github.com/alphacep/vosk-asterisk
-cd vosk-asterisk/
-./bootstrap
-./configure --with-asterisk=/usr/src/${ASTERISK_SRC_DIR} --prefix=/usr
-make
-make install
-
-
-#Add asterisk vost module resource config file
-cat > /etc/asterisk/res_speech_vosk.conf <<EOF
-[general]
-log-level = 0
-url = ws://127.0.0.1:2700
-EOF
-
-#Load module in asterisk
-/usr/sbin/asterisk -rx 'module load res_speech_vosk.so'
+#cat > /lib/systemd/system/vosk.service <<EOF
+#[Unit]
+#Description=Vosk Container
+#After=docker.service
+#Requires=docker.service
+#
+#[Service]
+#TimeoutStartSec=7
+#Restart=always
+#ExecStart=/usr/bin/docker run --rm --name vosk \
+#    -p 2700:2700 \
+#    issabel/vosk-asr-es:latest
+#
+#ExecStop=/usr/bin/docker stop vosk
+#
+#[Install]
+#WantedBy=multi-user.target
+#EOF
+#
+##Start vosk
+##systemctl enable vosk.service
+#service vosk start
+#
+##Install asterisk vosk module
+#cd /usr/src
+#git clone  https://github.com/alphacep/vosk-asterisk
+#cd vosk-asterisk/
+#./bootstrap
+#./configure --with-asterisk=/usr/src/${ASTERISK_SRC_DIR} --prefix=/usr
+#make
+#make install
+#
+#
+##Add asterisk vost module resource config file
+#cat > /etc/asterisk/res_speech_vosk.conf <<EOF
+#[general]
+#log-level = 0
+#url = ws://127.0.0.1:2700
+#EOF
+#
+##Load module in asterisk
+#/usr/sbin/asterisk -rx 'module load res_speech_vosk.so'
 
 #Enable live dangerously
 #https://docs.asterisk.org/Configuration/Dialplan/Privilege-Escalations-with-Dialplan-Functions/
