@@ -508,4 +508,7 @@ sed -i 's/^;live_dangerously = no/live_dangerously = yes/g' /etc/asterisk/asteri
 
 
 #Install perl lib
-perl -MCPAN -e "install LWP::Protocol::https; install Digest::MD5"
+apt-get install -y cpanminus libssl-dev libexpat1-dev libperl-dev
+cpanm --notest LWP::Protocol::https Digest::MD5
+#perl -MCPAN -e "install LWP::Protocol::https; install Digest::MD5"
+#
